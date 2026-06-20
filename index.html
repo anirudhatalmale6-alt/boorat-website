@@ -5,280 +5,351 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BOORAT - Anti-Detect Browser | Manage Multiple Browser Profiles</title>
 <meta name="description" content="BOORAT is a professional anti-detect browser for managing multiple browser profiles with unique fingerprints. Advanced proxy support, team collaboration, and automation tools.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#08080f;--bg2:#0d0d18;--bg3:#12121f;--bg4:#1a1a30;--border:#1e1e35;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--purple:#7c3aed;--purple2:#a78bfa;--orange:#f59e0b;--red:#ef4444;--green:#10b981;--blue:#3b82f6;--cyan:#06b6d4;--gradient:linear-gradient(135deg,#f59e0b,#ef4444)}
+:root{
+  --void:#05050a;--obsidian:#0a0a12;--slate:#0f0f1a;--steel:#161625;--ash:#1e1e30;
+  --smoke:#2a2a42;--mist:#94a3b8;--cloud:#cbd5e1;--snow:#f1f5f9;
+  --neon:#a855f7;--neon2:#c084fc;--ember:#f97316;--flame:#ef4444;--mint:#34d399;--sky:#38bdf8;
+  --glow:0 0 40px rgba(168,85,247,.15);
+  --glass:rgba(15,15,26,.6);--glass-border:rgba(168,85,247,.08);
+}
 html{scroll-behavior:smooth}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
-a{color:var(--orange);text-decoration:none}
-a:hover{text-decoration:underline}
+body{font-family:'Outfit',sans-serif;background:var(--void);color:var(--cloud);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
 
-/* Nav */
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,8,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
-.nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
-.nav-logo{font-size:22px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.5px}
-.nav-links{display:flex;gap:28px;align-items:center}
-.nav-links a{color:var(--text2);font-size:14px;font-weight:500;text-decoration:none;transition:.2s}
+/* ═══════════════════════════════════════════════════════════════
+   CANVAS — animated background mesh
+   ═══════════════════════════════════════════════════════════════ */
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-mesh .orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:.35;animation:orbFloat 20s ease-in-out infinite}
+.bg-mesh .orb:nth-child(1){width:600px;height:600px;background:radial-gradient(circle,rgba(168,85,247,.2),transparent 70%);top:-10%;left:-5%;animation-delay:0s}
+.bg-mesh .orb:nth-child(2){width:500px;height:500px;background:radial-gradient(circle,rgba(249,115,22,.12),transparent 70%);bottom:10%;right:-8%;animation-delay:-7s}
+.bg-mesh .orb:nth-child(3){width:400px;height:400px;background:radial-gradient(circle,rgba(52,211,153,.08),transparent 70%);top:50%;left:30%;animation-delay:-14s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(40px,-30px) scale(1.05)}50%{transform:translate(-20px,40px) scale(.95)}75%{transform:translate(30px,20px) scale(1.02)}}
+
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(168,85,247,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,.03) 1px,transparent 1px);
+  background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 60% at 50% 30%,black 20%,transparent 100%)}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLL REVEAL
+   ═══════════════════════════════════════════════════════════════ */
+[data-reveal]{opacity:0;transform:translateY(32px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+[data-reveal].visible{opacity:1;transform:translateY(0)}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════════════════════════ */
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 32px;transition:background .3s,box-shadow .3s}
+.nav.scrolled{background:rgba(5,5,10,.88);backdrop-filter:blur(24px) saturate(1.2);box-shadow:0 1px 0 var(--glass-border)}
+.nav-inner{max-width:1200px;margin:0 auto;height:72px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,var(--neon),var(--ember));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:32px;align-items:center}
+.nav-links a{font-size:13px;font-weight:500;color:var(--mist);letter-spacing:.3px;transition:.25s;position:relative}
 .nav-links a:hover{color:#fff}
-.nav-cta{padding:8px 20px;background:var(--gradient);color:#fff;border-radius:8px;font-weight:600;font-size:13px;border:none;cursor:pointer;transition:.2s;text-decoration:none!important}
-.nav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,158,11,.3)}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1.5px;background:var(--neon);transition:width .25s}
+.nav-links a:hover::after{width:100%}
+.nav-cta{padding:9px 22px;background:linear-gradient(135deg,var(--neon),#7c3aed);color:#fff;border-radius:8px;font-weight:600;font-size:13px;letter-spacing:.2px;transition:.25s;border:none;cursor:pointer}
+.nav-cta:hover{box-shadow:0 0 24px rgba(168,85,247,.4);transform:translateY(-1px)}
+@media(max-width:768px){.nav-links{display:none}}
 
-/* Hero */
-.hero{padding:140px 24px 80px;text-align:center;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(124,58,237,.08) 0%,transparent 70%);pointer-events:none}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-size:12px;color:var(--text2);margin-bottom:24px}
-.hero-badge span{color:var(--green);font-weight:600}
-.hero h1{font-size:clamp(36px,6vw,64px);font-weight:800;line-height:1.1;max-width:800px;margin:0 auto 20px;letter-spacing:-1px}
-.hero h1 .gradient{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero p{font-size:18px;color:var(--text2);max-width:560px;margin:0 auto 36px;line-height:1.7}
-.hero-buttons{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.btn-hero{padding:14px 32px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;border:none;text-decoration:none!important}
-.btn-primary{background:var(--gradient);color:#fff}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(245,158,11,.3)}
-.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--purple);background:var(--bg4)}
-.hero-stats{display:flex;gap:48px;justify-content:center;margin-top:60px;flex-wrap:wrap}
-.hero-stat{text-align:center}
-.hero-stat .num{font-size:32px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero-stat .label{font-size:13px;color:var(--text3);margin-top:2px}
+/* ═══════════════════════════════════════════════════════════════
+   HERO
+   ═══════════════════════════════════════════════════════════════ */
+.hero{position:relative;z-index:1;padding:160px 32px 80px;text-align:center}
+.hero-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;background:var(--glass);border:1px solid var(--glass-border);border-radius:100px;font-size:12px;color:var(--mist);margin-bottom:32px;backdrop-filter:blur(12px);animation:fadeUp .8s .1s both}
+.hero-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(40px,7vw,80px);font-weight:800;line-height:1.0;max-width:900px;margin:0 auto 24px;letter-spacing:-2px;animation:fadeUp .8s .2s both}
+.hero h1 .glow{background:linear-gradient(135deg,var(--neon2),var(--ember));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none}
+.hero-sub{font-size:18px;color:var(--mist);max-width:520px;margin:0 auto 40px;line-height:1.7;font-weight:300;animation:fadeUp .8s .35s both}
+.hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:fadeUp .8s .5s both}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:.3s;border:none;text-decoration:none!important;font-family:inherit}
+.btn-glow{background:linear-gradient(135deg,var(--neon),#7c3aed);color:#fff;box-shadow:0 4px 20px rgba(168,85,247,.25)}
+.btn-glow:hover{box-shadow:0 8px 40px rgba(168,85,247,.4);transform:translateY(-2px)}
+.btn-glass{background:var(--glass);color:var(--cloud);border:1px solid var(--smoke);backdrop-filter:blur(8px)}
+.btn-glass:hover{border-color:var(--neon);background:rgba(168,85,247,.05)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 
-/* Preview */
-.preview{max-width:1100px;margin:0 auto 100px;padding:0 24px}
-.preview-img{width:100%;border-radius:16px;border:1px solid var(--border);background:var(--bg3);overflow:hidden;position:relative;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}
-.preview-mockup{width:100%;height:100%;background:linear-gradient(145deg,#0d0d18,#1a1a30);display:flex;overflow:hidden;border-radius:16px}
-.mock-sidebar{width:200px;background:#0a0a14;border-right:1px solid var(--border);padding:16px 0;flex-shrink:0}
-.mock-sidebar-logo{padding:0 16px 12px;font-size:16px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.mock-sidebar-item{padding:8px 16px;font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;cursor:default}
-.mock-sidebar-item.active{color:var(--orange);background:rgba(245,158,11,.05);border-left:2px solid var(--orange)}
-.mock-sidebar-item .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-.mock-main{flex:1;padding:16px 20px}
-.mock-topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.mock-btn{padding:6px 14px;border-radius:6px;font-size:10px;font-weight:600;border:none}
-.mock-btn.primary{background:var(--gradient);color:#fff}
-.mock-btn.ghost{background:var(--bg);color:var(--text2);border:1px solid var(--border)}
-.mock-table{width:100%}
-.mock-table-head{display:flex;padding:8px 0;border-bottom:1px solid var(--border);gap:8px}
-.mock-table-head span{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;flex:1}
-.mock-row{display:flex;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.03);gap:8px;align-items:center}
-.mock-row span{font-size:10px;color:var(--text2);flex:1}
-.mock-row .name{color:var(--text);font-weight:500}
-.mock-row .badge{padding:2px 6px;border-radius:4px;font-size:8px;font-weight:600}
-.mock-row .badge.running{background:rgba(16,185,129,.15);color:var(--green)}
-.mock-row .badge.stopped{background:rgba(100,116,139,.15);color:var(--text3)}
-.mock-right{width:240px;background:var(--bg2);border-left:1px solid var(--border);padding:14px;flex-shrink:0}
-.mock-right-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px}
-.mock-right-title{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-.mock-right-val{font-size:18px;font-weight:700;color:var(--orange)}
-.mock-bar{height:4px;background:var(--bg);border-radius:2px;margin-top:4px}
-.mock-bar-fill{height:100%;border-radius:2px;background:var(--gradient)}
+.hero-metrics{display:flex;gap:1px;justify-content:center;margin-top:64px;animation:fadeUp .8s .65s both}
+.hero-metric{padding:20px 36px;background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border)}
+.hero-metric:first-child{border-radius:12px 0 0 12px}
+.hero-metric:last-child{border-radius:0 12px 12px 0}
+.hero-metric .val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--neon2),var(--ember));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-metric .lbl{font-size:11px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-top:2px;font-weight:500}
 
-/* Features */
-.section{padding:80px 24px}
-.section-center{text-align:center;max-width:600px;margin:0 auto 48px}
-.section-badge{display:inline-block;padding:4px 12px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.2);border-radius:16px;font-size:11px;font-weight:600;color:var(--purple2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
-.section h2{font-size:36px;font-weight:800;letter-spacing:-0.5px;margin-bottom:12px}
-.section h2 .gradient{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.section p.subtitle{color:var(--text2);font-size:16px}
+/* ═══════════════════════════════════════════════════════════════
+   APP PREVIEW — 3D perspective mockup
+   ═══════════════════════════════════════════════════════════════ */
+.app-preview{position:relative;z-index:1;max-width:1100px;margin:-20px auto 0;padding:0 32px 120px;perspective:1200px}
+.app-frame{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(168,85,247,.12);box-shadow:0 40px 120px -20px rgba(0,0,0,.6),0 0 60px -10px rgba(168,85,247,.08);transform:rotateX(2deg);transition:transform .5s}
+.app-frame:hover{transform:rotateX(0)}
+.app-frame::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(168,85,247,.04),transparent 40%);z-index:1;pointer-events:none}
+.app-titlebar{height:36px;background:#08080e;display:flex;align-items:center;padding:0 14px;gap:7px;border-bottom:1px solid rgba(255,255,255,.04)}
+.app-titlebar .dot{width:10px;height:10px;border-radius:50%}
+.app-titlebar .dot:nth-child(1){background:#ff5f57}.app-titlebar .dot:nth-child(2){background:#febc2e}.app-titlebar .dot:nth-child(3){background:#28c840}
+.app-titlebar span{flex:1;text-align:center;font-size:11px;color:#555;font-weight:500;font-family:'JetBrains Mono',monospace}
+.app-body{display:flex;background:#0a0a12;min-height:420px}
+.app-side{width:190px;background:#08080e;border-right:1px solid rgba(255,255,255,.04);padding:14px 0;flex-shrink:0}
+.app-side-brand{padding:0 14px 14px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;background:linear-gradient(135deg,var(--neon2),var(--ember));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.app-side-item{padding:7px 14px;font-size:11px;color:#555;display:flex;align-items:center;gap:8px}
+.app-side-item.active{color:var(--neon);background:rgba(168,85,247,.06);border-left:2px solid var(--neon)}
+.app-side-item .ico{width:14px;text-align:center}
+.app-side-sep{height:1px;background:rgba(255,255,255,.03);margin:10px 0}
+.app-side-label{padding:4px 14px;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#333;font-weight:600}
+.app-content{flex:1;padding:16px 20px}
+.app-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.app-toolbar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#eee;flex:1}
+.app-toolbar .tb{padding:5px 12px;border-radius:6px;font-size:10px;font-weight:600;border:none;font-family:'JetBrains Mono',monospace}
+.app-toolbar .tb.primary{background:linear-gradient(135deg,var(--neon),#7c3aed);color:#fff}
+.app-toolbar .tb.ghost{background:rgba(255,255,255,.04);color:#888;border:1px solid rgba(255,255,255,.06)}
+.app-table-head{display:flex;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.app-table-head span{flex:1;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:#444;font-weight:600;font-family:'JetBrains Mono',monospace}
+.app-row{display:flex;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.02);align-items:center}
+.app-row span{flex:1;font-size:11px;color:#777}
+.app-row .pname{color:#ddd;font-weight:500}
+.app-row .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600}
+.app-row .tag.on{background:rgba(52,211,153,.12);color:var(--mint)}
+.app-row .tag.off{background:rgba(100,116,139,.1);color:#555}
+.app-panel{width:220px;background:#08080e;border-left:1px solid rgba(255,255,255,.04);padding:14px;flex-shrink:0}
+.app-panel-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:8px;padding:10px;margin-bottom:8px}
+.app-panel-label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:#444;font-weight:600;font-family:'JetBrains Mono',monospace;margin-bottom:6px}
+.app-panel-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--neon2),var(--ember));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.app-bar{height:3px;background:rgba(255,255,255,.04);border-radius:2px;margin-top:6px;overflow:hidden}
+.app-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--neon),var(--ember))}
+.app-proxy-row{display:flex;gap:4px;margin-top:6px}
+.app-proxy-cell{flex:1;text-align:center;padding:4px;background:rgba(255,255,255,.02);border-radius:4px}
+.app-proxy-cell .v{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.app-proxy-cell .v.g{color:var(--mint)}.app-proxy-cell .v.p{color:var(--neon2)}.app-proxy-cell .v.o{color:var(--ember)}
+.app-proxy-cell .t{font-size:7px;text-transform:uppercase;letter-spacing:.5px;color:#444}
 
-.features-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
-.feature-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:28px;transition:.3s;position:relative;overflow:hidden}
-.feature-card:hover{border-color:rgba(245,158,11,.3);transform:translateY(-3px)}
-.feature-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:0 0 0 80px;opacity:.05}
-.feature-card:nth-child(1)::before{background:var(--orange)}.feature-card:nth-child(2)::before{background:var(--green)}.feature-card:nth-child(3)::before{background:var(--purple)}.feature-card:nth-child(4)::before{background:var(--blue)}.feature-card:nth-child(5)::before{background:var(--cyan)}.feature-card:nth-child(6)::before{background:var(--red)}
-.feature-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
-.feature-icon.orange{background:rgba(245,158,11,.1);color:var(--orange)}.feature-icon.green{background:rgba(16,185,129,.1);color:var(--green)}.feature-icon.purple{background:rgba(124,58,237,.1);color:var(--purple2)}.feature-icon.blue{background:rgba(59,130,246,.1);color:var(--blue)}.feature-icon.cyan{background:rgba(6,182,212,.1);color:var(--cyan)}.feature-icon.red{background:rgba(239,68,68,.1);color:var(--red)}
-.feature-card h3{font-size:17px;font-weight:700;margin-bottom:8px;color:#fff}
-.feature-card p{font-size:14px;color:var(--text2);line-height:1.6}
+/* Glow reflection under preview */
+.app-preview::after{content:'';position:absolute;bottom:40px;left:50%;transform:translateX(-50%);width:80%;height:200px;background:radial-gradient(ellipse,rgba(168,85,247,.06),transparent 70%);pointer-events:none;filter:blur(40px)}
 
-/* How it works */
-.steps{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:0}
-.step{display:flex;gap:32px;align-items:flex-start;padding:32px 0;position:relative}
-.step:not(:last-child)::after{content:'';position:absolute;left:27px;top:72px;bottom:0;width:2px;background:var(--border)}
-.step-num{width:56px;height:56px;border-radius:14px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex-shrink:0;background:var(--gradient);color:#fff}
-.step-content h3{font-size:18px;font-weight:700;margin-bottom:6px;color:#fff}
-.step-content p{font-size:14px;color:var(--text2);line-height:1.6}
+/* ═══════════════════════════════════════════════════════════════
+   SECTION COMMON
+   ═══════════════════════════════════════════════════════════════ */
+.section{position:relative;z-index:1;padding:100px 32px}
+.section-eyebrow{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--neon);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px}
+.section-eyebrow::before{content:'';width:20px;height:1.5px;background:var(--neon)}
+.section-title{font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-1px;line-height:1.15;margin-bottom:16px}
+.section-title .em{background:linear-gradient(135deg,var(--neon2),var(--ember));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.section-desc{font-size:16px;color:var(--mist);max-width:500px;font-weight:300;line-height:1.7}
+.section-center{text-align:center}.section-center .section-desc{margin:0 auto}
 
-/* Pricing */
-.pricing-grid{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.price-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:32px 28px;text-align:center;position:relative;transition:.3s}
-.price-card:hover{transform:translateY(-4px);border-color:rgba(245,158,11,.3)}
-.price-card.popular{border-color:var(--orange);background:linear-gradient(145deg,#1a1a30,#12121f)}
-.price-card.popular::before{content:'MOST POPULAR';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gradient);color:#fff;font-size:10px;font-weight:700;padding:4px 14px;border-radius:12px;letter-spacing:.5px}
-.price-name{font-size:18px;font-weight:700;margin-bottom:4px;color:#fff}
-.price-amount{font-size:48px;font-weight:800;margin:16px 0 4px}
-.price-amount.orange{color:var(--orange)}.price-amount.blue{color:var(--blue)}.price-amount.red{color:var(--red)}
-.price-amount span{font-size:16px;color:var(--text3);font-weight:400}
-.price-desc{font-size:13px;color:var(--text3);margin-bottom:24px}
+/* ═══════════════════════════════════════════════════════════════
+   FEATURES
+   ═══════════════════════════════════════════════════════════════ */
+.features-grid{max-width:1100px;margin:48px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(168,85,247,.06);border-radius:16px;overflow:hidden;border:1px solid rgba(168,85,247,.06)}
+.feat{background:var(--obsidian);padding:36px 32px;transition:.4s;position:relative}
+.feat:hover{background:var(--slate)}
+.feat::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon),transparent);opacity:0;transition:.4s}
+.feat:hover::after{opacity:.3}
+.feat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:20px;position:relative}
+.feat-icon::before{content:'';position:absolute;inset:-2px;border-radius:12px;background:linear-gradient(135deg,var(--neon),var(--ember));opacity:.15}
+.feat h3{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--snow);margin-bottom:8px}
+.feat p{font-size:13px;color:var(--mist);line-height:1.7;font-weight:300}
+@media(max-width:768px){.features-grid{grid-template-columns:1fr}}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROXY SECTION
+   ═══════════════════════════════════════════════════════════════ */
+.proxy-section{background:var(--obsidian);border-top:1px solid rgba(168,85,247,.06);border-bottom:1px solid rgba(168,85,247,.06)}
+.proxy-layout{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.proxy-types{margin-top:28px;display:flex;flex-direction:column;gap:10px}
+.proxy-type{display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;backdrop-filter:blur(8px);transition:.3s}
+.proxy-type:hover{border-color:rgba(168,85,247,.2);transform:translateX(4px)}
+.proxy-type-dot{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.proxy-type-dot.res{background:rgba(52,211,153,.1)}.proxy-type-dot.dc{background:rgba(168,85,247,.1)}.proxy-type-dot.mob{background:rgba(249,115,22,.1)}
+.proxy-type h4{font-size:14px;font-weight:600;color:var(--snow)}
+.proxy-type p{font-size:11px;color:var(--mist);font-weight:300}
+.proxy-visual{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.proxy-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;padding:24px;text-align:center;backdrop-filter:blur(8px)}
+.proxy-card .num{font-family:'Syne',sans-serif;font-size:32px;font-weight:800}
+.proxy-card .num.c1{color:var(--mint)}.proxy-card .num.c2{color:var(--neon2)}.proxy-card .num.c3{color:var(--ember)}
+.proxy-card .txt{font-size:11px;color:var(--mist);margin-top:2px;font-weight:400}
+.proxy-locations{grid-column:span 3;background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;padding:20px;text-align:center;backdrop-filter:blur(8px)}
+.proxy-locations .label{font-size:12px;color:var(--mist);margin-bottom:10px;font-weight:400}
+.proxy-flags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.proxy-flag{padding:4px 10px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.08);border-radius:6px;font-size:11px;color:var(--mist);font-family:'JetBrains Mono',monospace;font-weight:500}
+@media(max-width:768px){.proxy-layout{grid-template-columns:1fr;gap:40px}}
+
+/* ═══════════════════════════════════════════════════════════════
+   HOW IT WORKS
+   ═══════════════════════════════════════════════════════════════ */
+.steps{max-width:800px;margin:48px auto 0}
+.step{display:flex;gap:28px;align-items:flex-start;padding:28px 0;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;left:23px;top:76px;bottom:0;width:1px;background:linear-gradient(180deg,var(--neon),transparent)}
+.step-num{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:18px;font-weight:800;flex-shrink:0;background:linear-gradient(135deg,var(--neon),#7c3aed);color:#fff;box-shadow:0 0 20px rgba(168,85,247,.2)}
+.step h3{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--snow);margin-bottom:4px}
+.step p{font-size:14px;color:var(--mist);line-height:1.7;font-weight:300}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRICING
+   ═══════════════════════════════════════════════════════════════ */
+.pricing-section{background:var(--obsidian);border-top:1px solid rgba(168,85,247,.06);border-bottom:1px solid rgba(168,85,247,.06)}
+.pricing-grid{max-width:1000px;margin:48px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.price{background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;padding:36px 28px;text-align:center;position:relative;transition:.4s;backdrop-filter:blur(8px)}
+.price:hover{transform:translateY(-6px);border-color:rgba(168,85,247,.15)}
+.price.featured{background:linear-gradient(165deg,rgba(168,85,247,.08),rgba(249,115,22,.04));border-color:rgba(168,85,247,.2)}
+.price.featured::before{content:'RECOMMENDED';position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--neon),#7c3aed);color:#fff;font-size:9px;font-weight:700;padding:4px 16px;border-radius:100px;letter-spacing:1px;font-family:'JetBrains Mono',monospace}
+.price-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--snow);margin-bottom:4px}
+.price-tag{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;line-height:1;margin:20px 0 6px}
+.price-tag.c1{color:var(--ember)}.price-tag.c2{color:var(--neon2)}.price-tag.c3{color:var(--flame)}
+.price-tag span{font-size:16px;color:var(--mist);font-weight:400;font-family:'Outfit',sans-serif}
+.price-sub{font-size:13px;color:var(--mist);margin-bottom:28px;font-weight:300}
 .price-features{text-align:left;margin-bottom:28px}
-.price-features li{list-style:none;font-size:13px;color:var(--text2);padding:6px 0;display:flex;align-items:center;gap:8px}
-.price-features li::before{content:'\2713';color:var(--green);font-weight:700;font-size:14px}
-.price-btn{width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:.2s;border:none}
-.price-btn.primary{background:var(--gradient);color:#fff}
-.price-btn.primary:hover{box-shadow:0 6px 20px rgba(245,158,11,.3)}
-.price-btn.ghost{background:var(--bg);color:var(--text);border:1px solid var(--border)}
-.price-btn.ghost:hover{border-color:var(--orange)}
+.price-features li{list-style:none;font-size:13px;color:var(--mist);padding:7px 0;display:flex;align-items:center;gap:10px;font-weight:300;border-bottom:1px solid rgba(255,255,255,.03)}
+.price-features li::before{content:'\2713';color:var(--mint);font-weight:700;font-size:13px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(52,211,153,.08);flex-shrink:0}
+.price-btn{width:100%;padding:13px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.3s;border:none;font-family:inherit;letter-spacing:.2px}
+.price-btn.glow{background:linear-gradient(135deg,var(--neon),#7c3aed);color:#fff;box-shadow:0 4px 16px rgba(168,85,247,.2)}
+.price-btn.glow:hover{box-shadow:0 8px 32px rgba(168,85,247,.35);transform:translateY(-2px)}
+.price-btn.outline{background:transparent;color:var(--cloud);border:1px solid var(--smoke)}
+.price-btn.outline:hover{border-color:var(--neon);background:rgba(168,85,247,.04)}
+@media(max-width:768px){.pricing-grid{grid-template-columns:1fr;max-width:380px}}
 
-/* Proxy */
-.proxy-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.proxy-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
-.proxy-info h2{font-size:32px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px}
-.proxy-info p{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:24px}
-.proxy-types{display:flex;flex-direction:column;gap:12px}
-.proxy-type{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;transition:.2s}
-.proxy-type:hover{border-color:rgba(245,158,11,.2)}
-.proxy-type-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.proxy-type-icon.res{background:rgba(16,185,129,.1);color:var(--green)}
-.proxy-type-icon.dc{background:rgba(124,58,237,.1);color:var(--purple2)}
-.proxy-type-icon.mob{background:rgba(245,158,11,.1);color:var(--orange)}
-.proxy-type-info h4{font-size:14px;font-weight:600;color:#fff}
-.proxy-type-info p{font-size:12px;color:var(--text3)}
-.proxy-visual{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.proxy-stat{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
-.proxy-stat .big{font-size:28px;font-weight:800;margin-bottom:2px}
-.proxy-stat .big.green{color:var(--green)}.proxy-stat .big.purple{color:var(--purple2)}.proxy-stat .big.orange{color:var(--orange)}
-.proxy-stat .small{font-size:11px;color:var(--text3)}
-.proxy-globe{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;grid-column:span 3;text-align:center}
-.proxy-globe .title{font-size:13px;color:var(--text2);margin-bottom:8px}
-.proxy-flags{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.proxy-flag{padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text2)}
+/* ═══════════════════════════════════════════════════════════════
+   FAQ
+   ═══════════════════════════════════════════════════════════════ */
+.faq-list{max-width:680px;margin:48px auto 0}
+.faq-item{border-bottom:1px solid rgba(168,85,247,.06);overflow:hidden}
+.faq-q{padding:20px 0;font-size:15px;font-weight:500;color:var(--snow);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:.2s}
+.faq-q:hover{color:var(--neon2)}
+.faq-q .arrow{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(168,85,247,.06);color:var(--neon);font-size:14px;transition:.3s;flex-shrink:0}
+.faq-item.open .faq-q .arrow{transform:rotate(45deg);background:rgba(168,85,247,.15)}
+.faq-a{font-size:14px;color:var(--mist);line-height:1.7;font-weight:300;max-height:0;padding:0 0 0 0;transition:max-height .4s,padding .4s}
+.faq-item.open .faq-a{max-height:200px;padding:0 0 20px 0}
 
-/* FAQ */
-.faq-list{max-width:700px;margin:0 auto}
-.faq-item{border-bottom:1px solid var(--border);padding:20px 0}
-.faq-q{font-size:15px;font-weight:600;color:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-.faq-q::after{content:'+';font-size:20px;color:var(--text3);transition:.2s}
-.faq-item.open .faq-q::after{content:'-';color:var(--orange)}
-.faq-a{font-size:14px;color:var(--text2);line-height:1.7;max-height:0;overflow:hidden;transition:.3s}
-.faq-item.open .faq-a{max-height:200px;padding-top:12px}
+/* ═══════════════════════════════════════════════════════════════
+   CTA
+   ═══════════════════════════════════════════════════════════════ */
+.cta{position:relative;z-index:1;text-align:center;padding:120px 32px;overflow:hidden}
+.cta::before{content:'';position:absolute;bottom:-100px;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(circle,rgba(168,85,247,.08),transparent 70%);pointer-events:none}
+.cta-version{margin-top:16px;font-size:12px;color:var(--mist);font-family:'JetBrains Mono',monospace;font-weight:400}
 
-/* CTA */
-.cta-section{text-align:center;padding:100px 24px;position:relative}
-.cta-section::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(circle,rgba(245,158,11,.06) 0%,transparent 70%);pointer-events:none}
-.cta-section h2{font-size:36px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px}
-.cta-section p{font-size:16px;color:var(--text2);max-width:500px;margin:0 auto 32px}
-
-/* Footer */
-.footer{background:var(--bg2);border-top:1px solid var(--border);padding:48px 24px 24px}
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════════ */
+.footer{position:relative;z-index:1;background:var(--obsidian);border-top:1px solid rgba(168,85,247,.06);padding:56px 32px 28px}
 .footer-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px}
-.footer-brand h3{font-size:20px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
-.footer-brand p{font-size:13px;color:var(--text3);line-height:1.6}
-.footer-col h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
-.footer-col a{display:block;font-size:13px;color:var(--text3);padding:4px 0;text-decoration:none;transition:.2s}
-.footer-col a:hover{color:var(--orange)}
-.footer-bottom{max-width:1100px;margin:32px auto 0;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--text3)}
-
-/* Responsive */
-@media(max-width:768px){
-  .nav-links{display:none}
-  .features-grid{grid-template-columns:1fr}
-  .pricing-grid{grid-template-columns:1fr;max-width:400px}
-  .proxy-grid{grid-template-columns:1fr}
-  .footer-inner{grid-template-columns:1fr 1fr}
-  .hero-stats{gap:28px}
-  .step{flex-direction:column;gap:16px}
-  .step:not(:last-child)::after{display:none}
-}
-@media(max-width:480px){
-  .footer-inner{grid-template-columns:1fr}
-  .footer-bottom{flex-direction:column;gap:8px}
-}
+.footer-brand h3{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--neon2),var(--ember));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px}
+.footer-brand p{font-size:13px;color:var(--mist);line-height:1.6;font-weight:300}
+.footer-col h4{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--cloud);margin-bottom:16px;text-transform:uppercase;letter-spacing:1.5px}
+.footer-col a{display:block;font-size:13px;color:var(--mist);padding:4px 0;transition:.2s;font-weight:300}
+.footer-col a:hover{color:var(--neon2)}
+.footer-bottom{max-width:1100px;margin:36px auto 0;padding-top:20px;border-top:1px solid rgba(168,85,247,.06);display:flex;justify-content:space-between;font-size:11px;color:var(--mist);font-family:'JetBrains Mono',monospace;font-weight:400}
+@media(max-width:768px){.footer-inner{grid-template-columns:1fr 1fr}.footer-bottom{flex-direction:column;gap:6px}}
+@media(max-width:480px){.footer-inner{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
+<!-- Animated background -->
+<div class="bg-mesh"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+<div class="bg-grid"></div>
+
 <!-- Navigation -->
-<nav class="nav">
+<nav class="nav" id="nav">
   <div class="nav-inner">
-    <div class="nav-logo">BOORAT</div>
+    <div class="nav-brand">BOORAT</div>
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#proxy">Proxy</a>
       <a href="#pricing">Pricing</a>
-      <a href="#how-it-works">How It Works</a>
+      <a href="#how">How It Works</a>
       <a href="#faq">FAQ</a>
-      <a href="#download" class="nav-cta">Download Free</a>
+      <a href="#download" class="nav-cta">Download</a>
     </div>
   </div>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
-  <div class="hero-badge"><span>New</span> Version 1.2 with built-in proxy support</div>
-  <h1>The Ultimate <span class="gradient">Anti-Detect Browser</span> for Professionals</h1>
-  <p>Create and manage thousands of browser profiles with unique fingerprints. Built-in proxy rotation, team collaboration, and powerful automation tools.</p>
-  <div class="hero-buttons">
-    <a href="#download" class="btn-hero btn-primary">Download BOORAT</a>
-    <a href="#features" class="btn-hero btn-secondary">Learn More</a>
+  <div class="hero-pill"><span class="dot"></span> Version 1.2 &mdash; Built-in proxy support</div>
+  <h1>Undetectable<br>Browser <span class="glow">Profiles</span></h1>
+  <p class="hero-sub">Create thousands of isolated browser identities with unique fingerprints, built-in proxies, and full automation.</p>
+  <div class="hero-actions">
+    <a href="#download" class="btn btn-glow">Download BOORAT</a>
+    <a href="#features" class="btn btn-glass">Explore Features</a>
   </div>
-  <div class="hero-stats">
-    <div class="hero-stat"><div class="num">100K+</div><div class="label">Max Profiles</div></div>
-    <div class="hero-stat"><div class="num">50+</div><div class="label">Countries</div></div>
-    <div class="hero-stat"><div class="num">99.9%</div><div class="label">Uptime</div></div>
-    <div class="hero-stat"><div class="num">24/7</div><div class="label">Support</div></div>
+  <div class="hero-metrics">
+    <div class="hero-metric"><div class="val">100K+</div><div class="lbl">Profiles</div></div>
+    <div class="hero-metric"><div class="val">50+</div><div class="lbl">Countries</div></div>
+    <div class="hero-metric"><div class="val">99.9%</div><div class="lbl">Uptime</div></div>
+    <div class="hero-metric"><div class="val">24/7</div><div class="lbl">Support</div></div>
   </div>
 </section>
 
 <!-- App Preview -->
-<div class="preview">
-  <div class="preview-img">
-    <div class="preview-mockup">
-      <div class="mock-sidebar">
-        <div class="mock-sidebar-logo">BOORAT</div>
-        <div class="mock-sidebar-item active"><div class="dot"></div> All Profiles</div>
-        <div class="mock-sidebar-item"><div class="dot"></div> Facebook</div>
-        <div class="mock-sidebar-item"><div class="dot"></div> Google Ads</div>
-        <div class="mock-sidebar-item"><div class="dot"></div> E-Commerce</div>
-        <div class="mock-sidebar-item"><div class="dot"></div> Crypto</div>
-        <div style="padding:16px;margin-top:20px;border-top:1px solid rgba(255,255,255,.05)">
-          <div style="font-size:9px;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Extensions</div>
-          <div class="mock-sidebar-item">Cookie Manager</div>
-          <div class="mock-sidebar-item">Proxy Manager</div>
-          <div class="mock-sidebar-item">Authenticator</div>
-        </div>
+<div class="app-preview" data-reveal>
+  <div class="app-frame">
+    <div class="app-titlebar">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <span>BOORAT v1.2.0</span>
+    </div>
+    <div class="app-body">
+      <div class="app-side">
+        <div class="app-side-brand">BOORAT</div>
+        <div class="app-side-item active"><span class="ico">&#9632;</span> All Profiles</div>
+        <div class="app-side-item"><span class="ico">&#9632;</span> Facebook</div>
+        <div class="app-side-item"><span class="ico">&#9632;</span> Google Ads</div>
+        <div class="app-side-item"><span class="ico">&#9632;</span> E-Commerce</div>
+        <div class="app-side-item"><span class="ico">&#9632;</span> Crypto</div>
+        <div class="app-side-sep"></div>
+        <div class="app-side-label">Extensions</div>
+        <div class="app-side-item"><span class="ico">&#9733;</span> Cookie Manager</div>
+        <div class="app-side-item"><span class="ico">&#9733;</span> Proxy Manager</div>
+        <div class="app-side-item"><span class="ico">&#9733;</span> Authenticator</div>
+        <div class="app-side-sep"></div>
+        <div class="app-side-label">Automation</div>
+        <div class="app-side-item"><span class="ico">&#9881;</span> RPA Editor</div>
       </div>
-      <div class="mock-main">
-        <div class="mock-topbar">
-          <span style="font-size:14px;font-weight:600;color:#fff;flex:1">All Profiles (12)</span>
-          <div class="mock-btn primary">+ New Profile</div>
-          <div class="mock-btn ghost">Bulk Create</div>
-          <div class="mock-btn ghost">Import</div>
+      <div class="app-content">
+        <div class="app-toolbar">
+          <div class="app-toolbar-title">All Profiles (12)</div>
+          <div class="tb primary">+ New Profile</div>
+          <div class="tb ghost">Bulk Create</div>
+          <div class="tb ghost">Import</div>
         </div>
-        <div class="mock-table">
-          <div class="mock-table-head">
-            <span style="flex:1.5">Profile</span><span>Proxy</span><span>Status</span><span>Last Used</span>
-          </div>
-          <div class="mock-row"><span class="name" style="flex:1.5">US-Store-001</span><span>res-us-01:8080</span><span><span class="badge running">Running</span></span><span>2m ago</span></div>
-          <div class="mock-row"><span class="name" style="flex:1.5">UK-Account-04</span><span>res-uk-03:8080</span><span><span class="badge running">Running</span></span><span>5m ago</span></div>
-          <div class="mock-row"><span class="name" style="flex:1.5">DE-Profile-12</span><span>dc-de-01:3128</span><span><span class="badge stopped">Stopped</span></span><span>1h ago</span></div>
-          <div class="mock-row"><span class="name" style="flex:1.5">CA-Ads-007</span><span>mob-ca-02:8080</span><span><span class="badge stopped">Stopped</span></span><span>3h ago</span></div>
-          <div class="mock-row"><span class="name" style="flex:1.5">AU-Market-03</span><span>res-au-01:8080</span><span><span class="badge running">Running</span></span><span>8m ago</span></div>
+        <div class="app-table-head">
+          <span style="flex:1.5">Profile</span><span>Proxy</span><span>Status</span><span>Last Used</span>
         </div>
+        <div class="app-row"><span class="pname" style="flex:1.5">US-Store-001</span><span>res-us-01:8080</span><span><span class="tag on">Running</span></span><span>2m ago</span></div>
+        <div class="app-row"><span class="pname" style="flex:1.5">UK-Account-04</span><span>res-uk-03:8080</span><span><span class="tag on">Running</span></span><span>5m ago</span></div>
+        <div class="app-row"><span class="pname" style="flex:1.5">DE-Profile-12</span><span>dc-de-01:3128</span><span><span class="tag off">Stopped</span></span><span>1h ago</span></div>
+        <div class="app-row"><span class="pname" style="flex:1.5">CA-Ads-007</span><span>mob-ca-02:8080</span><span><span class="tag off">Stopped</span></span><span>3h ago</span></div>
+        <div class="app-row"><span class="pname" style="flex:1.5">AU-Market-03</span><span>res-au-01:8080</span><span><span class="tag on">Running</span></span><span>8m ago</span></div>
+        <div class="app-row"><span class="pname" style="flex:1.5">JP-Social-09</span><span>res-jp-02:8080</span><span><span class="tag off">Stopped</span></span><span>2d ago</span></div>
       </div>
-      <div class="mock-right">
-        <div class="mock-right-card">
-          <div class="mock-right-title">Workspace</div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div class="mock-right-val">12</div>
-            <div style="font-size:10px;color:#4b5563">/ 20,000</div>
+      <div class="app-panel">
+        <div class="app-panel-card">
+          <div class="app-panel-label">Workspace</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div class="app-panel-val">12</div>
+            <div style="font-size:10px;color:#444;font-family:'JetBrains Mono',monospace">/ 20,000</div>
           </div>
-          <div class="mock-bar"><div class="mock-bar-fill" style="width:12%"></div></div>
+          <div class="app-bar"><div class="app-bar-fill" style="width:8%"></div></div>
         </div>
-        <div class="mock-right-card">
-          <div class="mock-right-title">Boorat Proxy</div>
-          <div style="font-size:10px;color:#10b981;margin-bottom:4px">Active - 847 proxies</div>
-          <div style="display:flex;gap:4px">
-            <div style="flex:1;text-align:center;padding:4px;background:rgba(16,185,129,.06);border-radius:4px"><div style="font-size:11px;font-weight:700;color:#10b981">508</div><div style="font-size:8px;color:#4b5563">RES</div></div>
-            <div style="flex:1;text-align:center;padding:4px;background:rgba(124,58,237,.06);border-radius:4px"><div style="font-size:11px;font-weight:700;color:#a78bfa">212</div><div style="font-size:8px;color:#4b5563">DC</div></div>
-            <div style="flex:1;text-align:center;padding:4px;background:rgba(245,158,11,.06);border-radius:4px"><div style="font-size:11px;font-weight:700;color:#f59e0b">127</div><div style="font-size:8px;color:#4b5563">MOB</div></div>
+        <div class="app-panel-card">
+          <div class="app-panel-label">Boorat Proxy</div>
+          <div style="font-size:10px;color:var(--mint);margin-bottom:6px;font-family:'JetBrains Mono',monospace">&#9679; Active &mdash; 847 proxies</div>
+          <div class="app-proxy-row">
+            <div class="app-proxy-cell"><div class="v g">508</div><div class="t">RES</div></div>
+            <div class="app-proxy-cell"><div class="v p">212</div><div class="t">DC</div></div>
+            <div class="app-proxy-cell"><div class="v o">127</div><div class="t">MOB</div></div>
           </div>
         </div>
-        <div class="mock-right-card">
-          <div class="mock-right-title">Quick Actions</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
-            <div style="padding:6px;background:var(--bg);border-radius:4px;text-align:center;font-size:9px;color:#9ca3af">Fast Open</div>
-            <div style="padding:6px;background:var(--bg);border-radius:4px;text-align:center;font-size:9px;color:#9ca3af">Refresh</div>
-            <div style="padding:6px;background:var(--bg);border-radius:4px;text-align:center;font-size:9px;color:#9ca3af">Import</div>
-            <div style="padding:6px;background:var(--bg);border-radius:4px;text-align:center;font-size:9px;color:#9ca3af">Folder</div>
+        <div class="app-panel-card">
+          <div class="app-panel-label">Quick Actions</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:4px">
+            <div style="padding:5px;background:rgba(255,255,255,.02);border-radius:4px;text-align:center;font-size:9px;color:#666">Fast Open</div>
+            <div style="padding:5px;background:rgba(255,255,255,.02);border-radius:4px;text-align:center;font-size:9px;color:#666">Refresh</div>
+            <div style="padding:5px;background:rgba(255,255,255,.02);border-radius:4px;text-align:center;font-size:9px;color:#666">Import</div>
+            <div style="padding:5px;background:rgba(255,255,255,.02);border-radius:4px;text-align:center;font-size:9px;color:#666">Folder</div>
           </div>
         </div>
       </div>
@@ -288,237 +359,190 @@ a:hover{text-decoration:underline}
 
 <!-- Features -->
 <section class="section" id="features">
-  <div class="section-center">
-    <div class="section-badge">Features</div>
-    <h2>Everything You Need to <span class="gradient">Stay Undetected</span></h2>
-    <p class="subtitle">Professional-grade tools for managing multiple online identities securely and efficiently.</p>
+  <div class="section-center" data-reveal>
+    <div class="section-eyebrow">Features</div>
+    <div class="section-title">Everything to Stay <span class="em">Undetected</span></div>
+    <p class="section-desc">Professional-grade tools for managing multiple online identities securely and at scale.</p>
   </div>
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon orange">&#128737;</div>
-      <h3>Browser Fingerprint Masking</h3>
-      <p>Each profile gets a unique browser fingerprint including canvas, WebGL, audio context, fonts, screen resolution, timezone, and navigator properties. Passes all detection tests.</p>
+  <div class="features-grid" data-reveal>
+    <div class="feat">
+      <div class="feat-icon">&#128737;</div>
+      <h3>Fingerprint Masking</h3>
+      <p>Unique canvas, WebGL, audio, timezone, navigator, and screen fingerprints per profile. Passes every detection test.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon green">&#127760;</div>
-      <h3>Built-in Proxy Management</h3>
-      <p>Residential, datacenter, and mobile proxies built right in. Auto-rotate IPs per profile, support for HTTP/SOCKS5, and one-click proxy assignment from your proxy pool.</p>
+    <div class="feat">
+      <div class="feat-icon">&#127760;</div>
+      <h3>Proxy Management</h3>
+      <p>Residential, datacenter, and mobile proxies built-in. Auto-rotate IPs per profile with HTTP/SOCKS5 support.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon purple">&#9889;</div>
-      <h3>Lightning Fast Profiles</h3>
-      <p>Create and launch profiles in under 2 seconds. Bulk create hundreds of profiles at once with randomized fingerprints and auto-assigned proxies. Fast open from Quick Actions.</p>
+    <div class="feat">
+      <div class="feat-icon">&#9889;</div>
+      <h3>Lightning Profiles</h3>
+      <p>Create and launch profiles in under 2 seconds. Bulk create hundreds with randomized fingerprints instantly.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon blue">&#128101;</div>
+    <div class="feat">
+      <div class="feat-icon">&#128101;</div>
       <h3>Team Collaboration</h3>
-      <p>Share profiles with team members, set permissions, and manage access. Perfect for agencies and teams managing multiple accounts across platforms.</p>
+      <p>Share profiles across team members. Set permissions, manage access, perfect for agencies at any scale.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon cyan">&#128268;</div>
-      <h3>Automation & RPA</h3>
-      <p>Built-in RPA visual flow editor for automating repetitive tasks. Record, replay, and schedule browser automation workflows across any number of profiles.</p>
+    <div class="feat">
+      <div class="feat-icon">&#128268;</div>
+      <h3>RPA Automation</h3>
+      <p>Visual flow editor for automating browser tasks. Record, replay, and schedule workflows across profiles.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon red">&#128274;</div>
-      <h3>WebRTC Leak Protection</h3>
-      <p>Automatic WebRTC IP leak prevention. No real IP exposure through WebRTC, even with aggressive fingerprinting detection scripts running on target sites.</p>
+    <div class="feat">
+      <div class="feat-icon">&#128274;</div>
+      <h3>WebRTC Protection</h3>
+      <p>Automatic WebRTC IP leak prevention. Zero real IP exposure even under aggressive detection scripts.</p>
     </div>
   </div>
 </section>
 
-<!-- Proxy Section -->
+<!-- Proxy Network -->
 <section class="section proxy-section" id="proxy">
-  <div class="proxy-grid">
-    <div class="proxy-info">
-      <div class="section-badge">Proxy Network</div>
-      <h2>Built-in <span class="gradient">Proxy Network</span></h2>
-      <p>BOORAT comes with integrated proxy support. Add your own proxies or use the built-in proxy pool. Assign proxies per profile with automatic rotation and geo-targeting.</p>
+  <div class="proxy-layout">
+    <div data-reveal>
+      <div class="section-eyebrow">Proxy Network</div>
+      <div class="section-title">Built-in <span class="em">Global Proxies</span></div>
+      <p class="section-desc">Integrated proxy pool with automatic rotation and geo-targeting across 50+ countries.</p>
       <div class="proxy-types">
         <div class="proxy-type">
-          <div class="proxy-type-icon res">&#127757;</div>
-          <div class="proxy-type-info">
-            <h4>Residential Proxies</h4>
-            <p>Real residential IPs from ISPs across 50+ countries. Undetectable and perfect for sensitive operations.</p>
-          </div>
+          <div class="proxy-type-dot res">&#127757;</div>
+          <div><h4>Residential Proxies</h4><p>Real ISP IPs across 50+ countries. Undetectable for sensitive operations.</p></div>
         </div>
         <div class="proxy-type">
-          <div class="proxy-type-icon dc">&#9889;</div>
-          <div class="proxy-type-info">
-            <h4>Datacenter Proxies</h4>
-            <p>High-speed, low-latency datacenter IPs. Ideal for bulk operations where speed matters most.</p>
-          </div>
+          <div class="proxy-type-dot dc">&#9889;</div>
+          <div><h4>Datacenter Proxies</h4><p>High-speed, low-latency IPs. Ideal for bulk operations at scale.</p></div>
         </div>
         <div class="proxy-type">
-          <div class="proxy-type-icon mob">&#128241;</div>
-          <div class="proxy-type-info">
-            <h4>Mobile Proxies</h4>
-            <p>4G/5G mobile carrier IPs with automatic rotation. The most trusted proxy type for social platforms.</p>
-          </div>
+          <div class="proxy-type-dot mob">&#128241;</div>
+          <div><h4>Mobile Proxies</h4><p>4G/5G carrier IPs with auto-rotation. Most trusted for social platforms.</p></div>
         </div>
       </div>
     </div>
-    <div class="proxy-visual">
-      <div class="proxy-stat"><div class="big green">50+</div><div class="small">Countries</div></div>
-      <div class="proxy-stat"><div class="big purple">99.8%</div><div class="small">Uptime</div></div>
-      <div class="proxy-stat"><div class="big orange">&lt;50ms</div><div class="small">Avg Latency</div></div>
-      <div class="proxy-globe">
-        <div class="title">Supported Locations</div>
+    <div class="proxy-visual" data-reveal>
+      <div class="proxy-card"><div class="num c1">50+</div><div class="txt">Countries</div></div>
+      <div class="proxy-card"><div class="num c2">99.8%</div><div class="txt">Uptime</div></div>
+      <div class="proxy-card"><div class="num c3">&lt;50ms</div><div class="txt">Latency</div></div>
+      <div class="proxy-locations">
+        <div class="label">Supported Locations</div>
         <div class="proxy-flags">
-          <div class="proxy-flag">US</div>
-          <div class="proxy-flag">UK</div>
-          <div class="proxy-flag">DE</div>
-          <div class="proxy-flag">FR</div>
-          <div class="proxy-flag">CA</div>
-          <div class="proxy-flag">AU</div>
-          <div class="proxy-flag">JP</div>
-          <div class="proxy-flag">BR</div>
-          <div class="proxy-flag">IN</div>
-          <div class="proxy-flag">SG</div>
-          <div class="proxy-flag">NL</div>
-          <div class="proxy-flag">IT</div>
-          <div class="proxy-flag">ES</div>
-          <div class="proxy-flag">KR</div>
-          <div class="proxy-flag">+36 more</div>
+          <div class="proxy-flag">US</div><div class="proxy-flag">UK</div><div class="proxy-flag">DE</div>
+          <div class="proxy-flag">FR</div><div class="proxy-flag">CA</div><div class="proxy-flag">AU</div>
+          <div class="proxy-flag">JP</div><div class="proxy-flag">BR</div><div class="proxy-flag">IN</div>
+          <div class="proxy-flag">SG</div><div class="proxy-flag">NL</div><div class="proxy-flag">IT</div>
+          <div class="proxy-flag">ES</div><div class="proxy-flag">KR</div><div class="proxy-flag">+36 more</div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- How It Works -->
-<section class="section" id="how-it-works">
-  <div class="section-center">
-    <div class="section-badge">Getting Started</div>
-    <h2>Up and Running in <span class="gradient">3 Minutes</span></h2>
-    <p class="subtitle">BOORAT is designed to be simple. Download, install, and start creating profiles immediately.</p>
+<!-- How it works -->
+<section class="section" id="how">
+  <div class="section-center" data-reveal>
+    <div class="section-eyebrow">Getting Started</div>
+    <div class="section-title">Live in <span class="em">3 Minutes</span></div>
+    <p class="section-desc">Download, install, and start creating profiles immediately. No additional software required.</p>
   </div>
-  <div class="steps">
+  <div class="steps" data-reveal>
     <div class="step">
       <div class="step-num">1</div>
-      <div class="step-content">
-        <h3>Download & Install</h3>
-        <p>Download BOORAT for Windows. The installer sets everything up automatically including the Chromium engine. No additional software needed.</p>
-      </div>
+      <div><h3>Download & Install</h3><p>Download BOORAT for Windows. The installer sets everything up automatically including the Chromium engine.</p></div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div class="step-content">
-        <h3>Activate Your License</h3>
-        <p>Enter your license key to unlock your plan. Choose from Starter, Pro, or Enterprise based on your needs. Each plan includes full fingerprint masking and proxy support.</p>
-      </div>
+      <div><h3>Activate License</h3><p>Enter your license key to unlock your plan. Full fingerprint masking and proxy support included in every tier.</p></div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div class="step-content">
-        <h3>Create Profiles & Go</h3>
-        <p>Create your first browser profile with a unique fingerprint. Add a proxy, customize the user agent, timezone, and screen resolution. Click launch and you're live.</p>
-      </div>
+      <div><h3>Create & Launch</h3><p>Create profiles with unique fingerprints, assign proxies, customize settings, click launch. You're live.</p></div>
     </div>
   </div>
 </section>
 
 <!-- Pricing -->
-<section class="section" id="pricing" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-  <div class="section-center">
-    <div class="section-badge">Pricing</div>
-    <h2>Simple, <span class="gradient">Transparent</span> Pricing</h2>
-    <p class="subtitle">Choose the plan that fits your scale. All plans include full anti-detect features.</p>
+<section class="section pricing-section" id="pricing">
+  <div class="section-center" data-reveal>
+    <div class="section-eyebrow">Pricing</div>
+    <div class="section-title">Transparent <span class="em">Plans</span></div>
+    <p class="section-desc">Choose the plan that matches your scale. All plans include full anti-detect capabilities.</p>
   </div>
-  <div class="pricing-grid">
-    <div class="price-card">
+  <div class="pricing-grid" data-reveal>
+    <div class="price">
       <div class="price-name">Starter</div>
-      <div class="price-amount orange">$100<span>/mo</span></div>
-      <div class="price-desc">Perfect for individuals</div>
+      <div class="price-tag c1">$100<span>/mo</span></div>
+      <div class="price-sub">For individuals</div>
       <ul class="price-features">
         <li>5,000 browser profiles</li>
         <li>10 GB profile storage</li>
         <li>Full fingerprint masking</li>
         <li>Built-in proxy support</li>
         <li>1 machine activation</li>
-        <li>Chrome extension support</li>
+        <li>Extension support</li>
       </ul>
-      <button class="price-btn ghost" onclick="location.href='#download'">Get Started</button>
+      <button class="price-btn outline" onclick="location.href='#download'">Get Started</button>
     </div>
-    <div class="price-card popular">
+    <div class="price featured">
       <div class="price-name">Pro</div>
-      <div class="price-amount blue">$500<span>/mo</span></div>
-      <div class="price-desc">For teams and agencies</div>
+      <div class="price-tag c2">$500<span>/mo</span></div>
+      <div class="price-sub">For teams & agencies</div>
       <ul class="price-features">
         <li>20,000 browser profiles</li>
         <li>50 GB profile storage</li>
         <li>Full fingerprint masking</li>
         <li>Built-in proxy support</li>
-        <li>1 machine activation</li>
         <li>RPA automation tools</li>
         <li>Team collaboration</li>
         <li>Priority support</li>
       </ul>
-      <button class="price-btn primary" onclick="location.href='#download'">Get Pro</button>
+      <button class="price-btn glow" onclick="location.href='#download'">Get Pro</button>
     </div>
-    <div class="price-card">
+    <div class="price">
       <div class="price-name">Enterprise</div>
-      <div class="price-amount red">$1,000<span>/mo</span></div>
-      <div class="price-desc">For large-scale operations</div>
+      <div class="price-tag c3">$1,000<span>/mo</span></div>
+      <div class="price-sub">For large-scale ops</div>
       <ul class="price-features">
         <li>100,000 browser profiles</li>
         <li>200 GB profile storage</li>
         <li>Full fingerprint masking</li>
         <li>Built-in proxy support</li>
-        <li>1 machine activation</li>
         <li>RPA automation tools</li>
-        <li>Team collaboration</li>
         <li>Dedicated support</li>
         <li>Custom integrations</li>
       </ul>
-      <button class="price-btn ghost" onclick="location.href='#download'">Contact Us</button>
+      <button class="price-btn outline" onclick="location.href='#download'">Contact Us</button>
     </div>
   </div>
 </section>
 
 <!-- FAQ -->
 <section class="section" id="faq">
-  <div class="section-center">
-    <div class="section-badge">FAQ</div>
-    <h2>Frequently Asked <span class="gradient">Questions</span></h2>
+  <div class="section-center" data-reveal>
+    <div class="section-eyebrow">FAQ</div>
+    <div class="section-title">Common <span class="em">Questions</span></div>
   </div>
-  <div class="faq-list">
-    <div class="faq-item">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What is an anti-detect browser?</div>
-      <div class="faq-a">An anti-detect browser allows you to create multiple browser profiles, each with a unique browser fingerprint. This means each profile appears as a completely different device and user to websites, preventing cross-account detection and bans.</div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What fingerprint parameters does BOORAT mask?</div>
-      <div class="faq-a">BOORAT masks canvas fingerprint, WebGL vendor/renderer, audio context, navigator properties (hardware concurrency, device memory, platform, languages), screen resolution, timezone, WebRTC IPs, plugins, and more. Each profile gets a unique combination that passes detection tests.</div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Can I use my own proxies?</div>
-      <div class="faq-a">Yes. BOORAT supports custom proxies in HTTP and SOCKS5 format. You can assign a unique proxy to each profile, use the built-in proxy pool with auto-rotation, or connect without any proxy.</div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">How many profiles can I create?</div>
-      <div class="faq-a">Depending on your plan: Starter supports 5,000 profiles, Pro supports 20,000, and Enterprise supports up to 100,000 browser profiles. Each profile maintains its own cookies, local storage, and browser data.</div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Is there a free trial?</div>
-      <div class="faq-a">Contact us for a trial license. We offer limited-time trial keys so you can test BOORAT before committing to a subscription plan.</div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What platforms does BOORAT support?</div>
-      <div class="faq-a">BOORAT currently supports Windows (64-bit). It runs on Windows 10 and Windows 11. Mac and Linux versions are planned for future releases.</div>
-    </div>
+  <div class="faq-list" data-reveal>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What is an anti-detect browser?</span><span class="arrow">+</span></div><div class="faq-a">An anti-detect browser lets you create multiple browser profiles, each with a unique fingerprint. Every profile appears as a completely different device to websites, preventing cross-account detection and bans.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What fingerprints does BOORAT mask?</span><span class="arrow">+</span></div><div class="faq-a">Canvas, WebGL vendor/renderer, audio context, navigator properties, screen resolution, timezone, WebRTC IPs, plugins, and more. Each profile gets a unique combination that passes all detection tests.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Can I use my own proxies?</span><span class="arrow">+</span></div><div class="faq-a">Yes. BOORAT supports custom proxies in HTTP and SOCKS5 format. Assign unique proxies per profile, use the built-in proxy pool with auto-rotation, or connect without any proxy.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How many profiles can I create?</span><span class="arrow">+</span></div><div class="faq-a">Starter: 5,000 profiles. Pro: 20,000 profiles. Enterprise: up to 100,000 profiles. Each maintains its own cookies, local storage, and browser data independently.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Is there a free trial?</span><span class="arrow">+</span></div><div class="faq-a">Contact us for a trial license. We offer limited-time trial keys so you can test BOORAT fully before committing to a subscription plan.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What platforms are supported?</span><span class="arrow">+</span></div><div class="faq-a">BOORAT currently supports Windows 10 and Windows 11 (64-bit). Mac and Linux versions are planned for future releases.</div></div>
   </div>
 </section>
 
 <!-- CTA -->
-<section class="cta-section" id="download">
-  <div class="section-badge">Get Started</div>
-  <h2>Ready to Go <span class="gradient">Undetected</span>?</h2>
-  <p>Download BOORAT today and take control of your online identity. Professional anti-detect technology at your fingertips.</p>
-  <div class="hero-buttons">
-    <a href="https://github.com/anirudhatalmale6-alt/boorat-browser/releases" class="btn-hero btn-primary" target="_blank">Download for Windows</a>
+<section class="cta" id="download">
+  <div data-reveal>
+    <div class="section-eyebrow" style="justify-content:center">Get Started</div>
+    <div class="section-title section-center" style="margin-bottom:16px">Ready to Go <span class="em">Invisible</span>?</div>
+    <p class="section-desc section-center" style="margin-bottom:36px">Professional anti-detect technology. Download BOORAT and take control of your online identity.</p>
+    <div style="display:flex;justify-content:center">
+      <a href="https://github.com/anirudhatalmale6-alt/boorat-browser/releases" class="btn btn-glow" target="_blank">Download for Windows</a>
+    </div>
+    <div class="cta-version">Windows 10/11 64-bit &bull; v1.2.0 &bull; License required</div>
   </div>
-  <div style="margin-top:16px;font-size:13px;color:var(--text3)">Windows 10/11 64-bit | v1.2.0 | Free download, license required</div>
 </section>
 
 <!-- Footer -->
@@ -526,7 +550,7 @@ a:hover{text-decoration:underline}
   <div class="footer-inner">
     <div class="footer-brand">
       <h3>BOORAT</h3>
-      <p>Professional anti-detect browser for managing multiple browser profiles with unique fingerprints, built-in proxy support, and automation tools.</p>
+      <p>Professional anti-detect browser for managing multiple browser profiles with unique fingerprints, built-in proxy support, and automation.</p>
     </div>
     <div class="footer-col">
       <h4>Product</h4>
@@ -538,7 +562,7 @@ a:hover{text-decoration:underline}
     <div class="footer-col">
       <h4>Resources</h4>
       <a href="#faq">FAQ</a>
-      <a href="#how-it-works">Getting Started</a>
+      <a href="#how">Getting Started</a>
       <a href="#">Documentation</a>
       <a href="#">API Reference</a>
     </div>
@@ -551,10 +575,25 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="footer-bottom">
-    <span>2026 BOORAT. All rights reserved.</span>
+    <span>&copy; 2026 BOORAT. All rights reserved.</span>
     <span>Professional Anti-Detect Browser</span>
   </div>
 </footer>
+
+<script>
+// Scroll reveal
+var reveals = document.querySelectorAll('[data-reveal]');
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+reveals.forEach(function(el) { observer.observe(el); });
+
+// Nav scroll
+var nav = document.getElementById('nav');
+window.addEventListener('scroll', function() {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+});
+</script>
 
 </body>
 </html>
